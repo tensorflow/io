@@ -14,6 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include "arrow/api.h"
+#include "arrow/filesystem/localfs.h"
 #include "arrow/io/stdio.h"
 #include "arrow/ipc/api.h"
 #include "arrow/result.h"
@@ -32,10 +33,68 @@ namespace data {
 
 namespace {
 
-// TODO(yye): implement this func and support reading parquet data in
-// streamining way.
-Status OpenParquetFile(arrow::fs::FileSystem *fs,
-                       arrow::io::RandomAccessFile *file) {}
+// Struct to hold all the resource needed to read a parquet file for better
+// management.
+struct ParquetReaderResource {
+  void reset() {
+    if (this->batch_reader != nullptr) {
+      this->batch_reader.reset();
+    }
+    if (this->table != nullptr) {
+      this->table.reset();
+    }
+    if (this->reader != nullptr) {
+      this->reader.reset();
+    }
+    if (this->file != nullptr) {
+      this->file.reset();
+    }
+  }
+
+  std::shared_ptr<::arrow::io::RandomAccessFile> file;
+  std::unique_ptr<parquet::arrow::FileReader> reader;
+  std::shared_ptr<::arrow::Table> table;
+  std::shared_ptr<arrow::TableBatchReader> batch_reader;
+};
+
+arrow::Status OpenParquetFile(const std::string &file_name,
+                              const std::vector<std::string> &column_names,
+                              const int64 batch_size, arrow::fs::FileSystem *fs,
+                              ParquetReaderResource *resource) {
+  resource->reset();
+  ARROW_ASSIGN_OR_RAISE(resource->file, fs->OpenInputFile(file_name));
+  parquet::ArrowReaderProperties properties;
+  properties.set_use_threads(true);
+  properties.set_pre_buffer(true);
+  parquet::ReaderProperties parquet_properties =
+      parquet::default_reader_properties();
+
+  std::shared_ptr<parquet::arrow::FileReaderBuilder> builder =
+      std::make_shared<parquet::arrow::FileReaderBuilder>();
+  builder->Open(resource->file, parquet_properties);
+  builder->properties(properties)->Build(&resource->reader);
+
+  std::shared_ptr<arrow::Schema> schema;
+  resource->reader->GetSchema(&schema);
+  // check column name exist
+  std::vector<std::string> missing_columns;
+  std::vector<int> column_indices;
+  for (const auto &name : column_names) {
+    int fieldIndex = schema->GetFieldIndex(name);
+    column_indices.push_back(fieldIndex);
+    if (-1 == fieldIndex) {
+      missing_columns.push_back(name);
+    }
+  }
+
+  ARROW_RETURN_NOT_OK(
+      resource->reader->ReadTable(column_indices, &resource->table));
+  // Convert the table to a sequence of batches
+  resource->batch_reader =
+      std::make_shared<arrow::TableBatchReader>(*(resource->table));
+  resource->batch_reader->set_chunksize(batch_size);
+  return arrow::Status::OK();
+}
 
 }  // namespace
 
@@ -553,7 +612,7 @@ class ArrowParquetDatasetOp : public ArrowOpKernelBase {
     std::vector<string> file_paths, column_names;
     file_paths.reserve(file_paths_as_tensor->NumElements());
     for (int i = 0; i < file_paths_as_tensor->NumElements(); i++) {
-      file_paths.push_back(file_paths_as_tensor->flat<tstring>()(i))
+      file_paths.push_back(file_paths_as_tensor->flat<tstring>()(i));
     }
     column_names.reserve(column_names_as_tensor->NumElements());
     for (int i = 0; i < column_names_as_tensor->NumElements(); i++) {
@@ -618,117 +677,72 @@ class ArrowParquetDatasetOp : public ArrowOpKernelBase {
           : ArrowBaseIterator<Dataset>(params) {}
 
      private:
-      // TODO(yye): implementation of getting the first batch.
       Status SetupStreamsLocked(Env *env)
           TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
-        TF_RETURN_IF_ERROR(ReadFile(current_file_idx_));
-
-        // Open and read parquet file.
-        while (record_batches_.empty() &&
-               ++current_file_idx_ < dataset()->file_paths_.size()) {
-          TF_RETURN_IF_ERROR(ReadFile(current_file_idx_));
-        }
+        this->fs_ = std::make_shared<arrow::fs::LocalFileSystem>();
+        do {
+          auto arrow_status =
+              OpenParquetFile(dataset()->file_paths_[current_file_idx_],
+                              dataset()->column_names_, dataset()->batch_size_,
+                              this->fs_.get(), &parquet_reader_resource_);
+          if (!arrow_status.ok()) {
+            return errors::Internal(arrow_status.message());
+          }
+          std::shared_ptr<arrow::RecordBatch> next_batch = nullptr;
+          arrow_status = this->parquet_reader_resource_.batch_reader->ReadNext(
+              &current_batch_);
+          if (!arrow_status.ok()) {
+            return errors::Internal(arrow_status.message());
+          }
+          if (current_batch_ == nullptr) {
+            current_file_idx_ = current_file_idx_ + 1;
+          }
+        } while (current_file_idx_ < dataset()->file_paths_.size());
 
         return OkStatus();
       }
 
-      // TODO(yye): implementation of getting the next batch.
       Status NextStreamLocked(Env *env)
           TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+        ArrowBaseIterator<Dataset>::NextStreamLocked(env);
+        do {
+          auto arrow_status =
+              this->parquet_reader_resource_.batch_reader->ReadNext(
+                  &current_batch_);
+          if (!arrow_status.ok()) {
+            return errors::Internal(arrow_status.message());
+          }
+          if (current_batch_ != nullptr) {
+            return OkStatus();
+          } else {
+            current_file_idx_ = current_file_idx_ + 1;
+            if (current_file_idx_ == dataset()->file_paths_.size()) {
+              break;
+            }
+            auto arrow_status = OpenParquetFile(
+                dataset()->file_paths_[current_file_idx_],
+                dataset()->column_names_, dataset()->batch_size_,
+                this->fs_.get(), &parquet_reader_resource_);
+            if (!arrow_status.ok()) {
+              return errors::Internal(arrow_status.message());
+            }
+          }
+        } while (true);
         return OkStatus();
       }
 
       void ResetStreamsLocked() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
         ArrowBaseIterator<Dataset>::ResetStreamsLocked();
         current_file_idx_ = 0;
-        record_batches_.clear();
-      }
-
-      Status ReadFile(int file_index) TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-        Status res = OkStatus();
-        do {
-          std::shared_ptr<arrow::io::RandomAccessFile> file;
-          res = OpenParquetFile(&fs_, file.get());
-          if (!res.ok()) {
-            break;
-          }
-
-          parquet::ArrowReaderProperties properties;
-          properties.set_use_threads(true);
-          properties.set_pre_buffer(true);
-          parquet::ReaderProperties parquet_properties =
-              parquet::default_reader_properties();
-
-          std::shared_ptr<parquet::arrow::FileReaderBuilder> builder =
-              std::make_shared<parquet::arrow::FileReaderBuilder>();
-          builder->Open(file, parquet_properties);
-
-          std::unique_ptr<parquet::arrow::FileReader> reader;
-          builder->properties(properties)->Build(&reader);
-
-          if (column_indices_.empty()) {
-            column_indices_.clear();
-            std::shared_ptr<arrow::Schema> schema;
-            reader->GetSchema(&schema);
-            // check column name exist
-            std::string err_column_names;
-            for (const auto &name : dataset()->column_names_) {
-              int fieldIndex = schema->GetFieldIndex(name);
-              column_indices_.push_back(fieldIndex);
-              if (-1 == fieldIndex) {
-                err_column_names = err_column_names + " " + name;
-              }
-            }
-
-            if (err_column_names.length() != 0) {
-              res = errors::InvalidArgument(
-                  "these column names don't exist: ", err_column_names,
-                  " when read file: ", dataset()->file_paths_[file_index]);
-              break;
-            }
-          }
-          // Read file columns and build a table
-          std::shared_ptr<::arrow::Table> table;
-          arrow::Status arrow_status =
-              reader->ReadTable(column_indices_, &table);
-          if (!arrow_status.ok()) {
-            res = errors::Internal(arrow_status.ToString());
-            break;
-          }
-          // Convert the table to a sequence of batches
-          std::shared_ptr<arrow::RecordBatchReader> batch_reader =
-              std::make_shared<arrow::TableBatchReader>(table);
-          std::shared_ptr<arrow::RecordBatch> batch = nullptr;
-
-          arrow_status = batch_reader->ReadNext(&batch);
-          if (!arrow_status.ok()) {
-            res = errors::Internal(arrow_status.ToString());
-            break;
-          }
-          res = CheckBatchColumnTypes(batch);
-          if (!res.ok()) {
-            break;
-          }
-          record_batches_.clear();
-          while (batch != nullptr) {
-            if (batch->num_rows() != 0) {
-              record_batches_.emplace_back(batch);
-            }
-            arrow_status = batch_reader->ReadNext(&batch);
-            if (!arrow_status.ok()) {
-              res = errors::Internal(arrow_status.ToString());
-              break;
-            }
-          }
-        } while (0);
-        return res;
+        parquet_reader_resource_.reset();
+        fs_.reset();
       }
 
       size_t current_file_idx_ TF_GUARDED_BY(mu_) = 0;
-      // TODO(yye): stop maintaining/holding all the record batches.
-      std::vector<std::shared_ptr<arrow::RecordBatch>> record_batches_
-          TF_GUARDED_BY(mu_);
+
       std::shared_ptr<arrow::fs::FileSystem> fs_ TF_GUARDED_BY(mu_) = nullptr;
+
+      ParquetReaderResource parquet_reader_resource_ TF_GUARDED_BY(mu_);
 
       // Maintains the index of the columns to read.
       std::vector<int> column_indices_ TF_GUARDED_BY(mu_);
