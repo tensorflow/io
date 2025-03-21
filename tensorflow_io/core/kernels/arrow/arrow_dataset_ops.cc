@@ -637,9 +637,7 @@ class ArrowParquetDatasetOp : public ArrowOpKernelBase {
         : ArrowDatasetBase(ctx, columns, batch_size, batch_mode, output_types,
                            output_shapes),
           file_paths_(file_paths),
-          column_names_(column_names) {
-      LOG(INFO) << "Dataset called ";
-    }
+          column_names_(column_names) {}
 
     string DebugString() const override {
       return "ArrowParquetDatasetOp::Dataset";
@@ -686,7 +684,6 @@ class ArrowParquetDatasetOp : public ArrowOpKernelBase {
      private:
       Status SetupStreamsLocked(Env *env)
           TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
-        std::cout << "SetupStreamLocked called " << std::endl;
         this->fs_ = std::make_shared<arrow::fs::LocalFileSystem>();
         do {
           auto arrow_status =
@@ -701,13 +698,14 @@ class ArrowParquetDatasetOp : public ArrowOpKernelBase {
               &current_batch_);
           if (!arrow_status.ok()) {
             return errors::Internal(arrow_status.message());
-          }
-          if (current_batch_ == nullptr) {
+          } else if (current_batch_ == nullptr) {
             current_file_idx_ = current_file_idx_ + 1;
-          }
+          } else {
+	    return OkStatus();
+	  }
         } while (current_file_idx_ < dataset()->file_paths_.size());
 
-        return OkStatus();
+        return errors::Interal("Expected EOF.");
       }
 
       Status NextStreamLocked(Env *env)
@@ -736,7 +734,7 @@ class ArrowParquetDatasetOp : public ArrowOpKernelBase {
             }
           }
         } while (true);
-        return OkStatus();
+        return errors::Interal("Expected EOF.");
       }
 
       void ResetStreamsLocked() TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
