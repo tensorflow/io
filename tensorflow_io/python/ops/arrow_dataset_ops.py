@@ -657,7 +657,7 @@ class ArrowParquetDataset(ArrowBaseDataset):
 
     def __init__(
             self,
-            parquet_files,
+            file_paths,
             column_names,
             columns,
             output_types,
@@ -665,8 +665,8 @@ class ArrowParquetDataset(ArrowBaseDataset):
             batch_size=None,
             batch_mode="keep_remainder",
     ):
-        parquet_files = tf.convert_to_tensor(
-            parquet_files, dtype=dtypes.string, name="parquet_files"
+        file_paths = tf.convert_to_tensor(
+            file_paths, dtype=dtypes.string, name="file_paths"
         )
         column_names = tf.convert_to_tensor(
             column_names, dtype=dtypes.string, name="column_names"
@@ -674,7 +674,7 @@ class ArrowParquetDataset(ArrowBaseDataset):
         super().__init__(
             partial(
                 core_ops.io_arrow_parquet_dataset,
-                parquet_files,
+                file_paths,
                 column_names,
             ),
             columns,

@@ -41,6 +41,7 @@ buffer_size: Buffer size in bytes
 REGISTER_OP("IO>ArrowParquetDataset")
     .Input("file_paths: string")
     .Input("column_names: string")
+    .Input("columns: int32")
     .Input("batch_size: int64")
     .Input("batch_mode: string")
     .Output("handle: variant")

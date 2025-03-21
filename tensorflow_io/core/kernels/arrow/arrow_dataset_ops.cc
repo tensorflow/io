@@ -13,6 +13,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include <iostream>
+
 #include "arrow/api.h"
 #include "arrow/filesystem/localfs.h"
 #include "arrow/io/stdio.h"
@@ -602,8 +604,9 @@ class ArrowParquetDatasetOp : public ArrowOpKernelBase {
       : ArrowOpKernelBase(ctx) {}
 
   virtual void MakeArrowDataset(
-      OpKernelContext *ctx, const std::vector<int32> &_, const int64 batch_size,
-      const ArrowBatchMode batch_mode, const DataTypeVector &output_types,
+      OpKernelContext *ctx, const std::vector<int32> &columns,
+      const int64 batch_size, const ArrowBatchMode batch_mode,
+      const DataTypeVector &output_types,
       const std::vector<PartialTensorShape> &output_shapes,
       ArrowDatasetBase **output) override {
     const Tensor *file_paths_as_tensor;
@@ -614,12 +617,13 @@ class ArrowParquetDatasetOp : public ArrowOpKernelBase {
     for (int i = 0; i < file_paths_as_tensor->NumElements(); i++) {
       file_paths.push_back(file_paths_as_tensor->flat<tstring>()(i));
     }
+    OP_REQUIRES_OK(ctx, ctx->input("column_names", &column_names_as_tensor));
     column_names.reserve(column_names_as_tensor->NumElements());
     for (int i = 0; i < column_names_as_tensor->NumElements(); i++) {
       column_names.push_back(column_names_as_tensor->flat<tstring>()(i));
     }
-    *output = new Dataset(ctx, file_paths, column_names, batch_size, batch_mode,
-                          output_types_, output_shapes_);
+    *output = new Dataset(ctx, file_paths, column_names, columns, batch_size,
+                          batch_mode, output_types_, output_shapes_);
   }
 
  private:
@@ -627,13 +631,15 @@ class ArrowParquetDatasetOp : public ArrowOpKernelBase {
    public:
     Dataset(OpKernelContext *ctx, const std::vector<std::string> &file_paths,
             const std::vector<std::string> &column_names,
-            const int64 batch_size, const ArrowBatchMode batch_mode,
-            const DataTypeVector &output_types,
+            const std::vector<int32> &columns, const int64 batch_size,
+            const ArrowBatchMode batch_mode, const DataTypeVector &output_types,
             const std::vector<PartialTensorShape> &output_shapes)
-        : ArrowDatasetBase(ctx, /*columns=*/std::vector<int>(), batch_size,
-                           batch_mode, output_types, output_shapes),
+        : ArrowDatasetBase(ctx, columns, batch_size, batch_mode, output_types,
+                           output_shapes),
           file_paths_(file_paths),
-          column_names_(column_names) {}
+          column_names_(column_names) {
+      LOG(INFO) << "Dataset called ";
+    }
 
     string DebugString() const override {
       return "ArrowParquetDatasetOp::Dataset";
@@ -660,7 +666,8 @@ class ArrowParquetDatasetOp : public ArrowOpKernelBase {
       TF_RETURN_IF_ERROR(GetBatchModeStr(batch_mode_, &batch_mode_str));
       TF_RETURN_IF_ERROR(b->AddScalar(batch_mode_str, &batch_mode));
       TF_RETURN_IF_ERROR(b->AddDataset(
-          this, {file_paths, column_names, batch_size, batch_mode}, output));
+          this, {file_paths, column_names, columns, batch_size, batch_mode},
+          output));
       return OkStatus();
     }
 
@@ -679,6 +686,7 @@ class ArrowParquetDatasetOp : public ArrowOpKernelBase {
      private:
       Status SetupStreamsLocked(Env *env)
           TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
+        std::cout << "SetupStreamLocked called " << std::endl;
         this->fs_ = std::make_shared<arrow::fs::LocalFileSystem>();
         do {
           auto arrow_status =
