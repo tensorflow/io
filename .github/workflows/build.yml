@@ -485,7 +485,7 @@ jobs:
     name: Release
     if: github.event_name == 'push'
     needs: [linux-wheel, macos-wheel] #, windows-wheel]
-    runs-on: ubuntu-20.04
+    runs-on: 'ubuntu-24.04'
     steps:
       - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
         with:
@@ -561,7 +561,7 @@ jobs:
     name: Release Candidate
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     needs: [release]
-    runs-on: ubuntu-20.04
+    runs-on: 'ubuntu-24.04'
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
@@ -601,7 +601,7 @@ jobs:
     name: Docker Release
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     needs: [lint, linux-test, macos-test, windows-test]
-    runs-on: ubuntu-20.04
+    runs-on: 'ubuntu-24.04'
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
@@ -622,7 +622,7 @@ jobs:
   build-number:
     name: Build Number
     if: github.event_name == 'push'
-    runs-on: ubuntu-20.04
+    runs-on: 'ubuntu-24.04'
     steps:
       - run: |
           set -e -x
@@ -684,7 +684,7 @@ jobs:
     name: Nightly ${{ matrix.python }} Linux
     if: github.event_name == 'push'
     needs: [build-number, linux-wheel]
-    runs-on: ubuntu-20.04
+    runs-on: 'ubuntu-24.04'
     strategy:
       matrix:
         python: ['3.9', '3.10', '3.11', '3.12']
@@ -761,7 +761,7 @@ jobs:
     name: Nightly
     if: github.event_name == 'push'
     needs: [linux-nightly, macos-nightly, windows-nightly]
-    runs-on: ubuntu-20.04
+    runs-on: 'ubuntu-24.04'
     steps:
       - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
         with:
@@ -859,7 +859,7 @@ jobs:
     name: Docker Nightly
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     needs: [linux-nightly, macos-nightly, windows-nightly]
-    runs-on: ubuntu-20.04
+    runs-on: 'ubuntu-24.04'
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
