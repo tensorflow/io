@@ -49,7 +49,7 @@ jobs:
   linux:
     if: github.repository == 'tensorflow/io' # Don't do this in forks
     name: Linux ${{ matrix.python }} + ${{ matrix.version }}
-    runs-on: ubuntu-20.04
+    runs-on: 'ubuntu-24.04'
     permissions:
       contents: write # to allow sending a commit comment for the benchmark action
     strategy:
