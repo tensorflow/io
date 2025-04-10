@@ -32,7 +32,7 @@ class AWSLogSystem : public Aws::Utils::Logging::LogSystemInterface {
   static void ShutdownAWSLogging();
 
   explicit AWSLogSystem(Aws::Utils::Logging::LogLevel log_level);
-  virtual ~AWSLogSystem() = default;
+  virtual ~AWSLogSystem() { ShutdownAWSLogging(); }
 
   // Gets the currently configured log level.
   Aws::Utils::Logging::LogLevel GetLogLevel(void) const override {
