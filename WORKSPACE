@@ -54,7 +54,6 @@ http_archive(
     sha256 = "14bf9bf97431b890e0ae5dca8f8904841d4883b8596a7108a42f5700ae58d711",
     strip_prefix = "google-cloud-cpp-1.21.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/googleapis/google-cloud-cpp/archive/v1.21.0.tar.gz",
         "https://github.com/googleapis/google-cloud-cpp/archive/v1.21.0.tar.gz",
     ],
 )
@@ -178,11 +177,12 @@ http_archive(
 http_archive(
     name = "arrow",
     build_file = "//third_party:arrow.BUILD",
-    sha256 = "57e13c62f27b710e1de54fd30faed612aefa22aa41fa2c0c3bacd204dd18a8f3",
-    strip_prefix = "arrow-apache-arrow-7.0.0",
+    patch_cmds = ["""sed -i.bak '24i\\'$'\\n#undef ARROW_WITH_OPENTELEMETRY\\n' cpp/src/arrow/util/tracing_internal.h"""],
+    sha256 = "19ece12de48e51ce4287d2dee00dc358fbc5ff02f41629d16076f77b8579e272",
+    strip_prefix = "arrow-apache-arrow-8.0.0",
     urls = [
-        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/arrow/archive/apache-arrow-7.0.0.tar.gz",
-        "https://github.com/apache/arrow/archive/apache-arrow-7.0.0.tar.gz",
+        "https://storage.googleapis.com/mirror.tensorflow.org/github.com/apache/arrow/archive/apache-arrow-8.0.0.tar.gz",
+        "https://github.com/apache/arrow/archive/apache-arrow-8.0.0.tar.gz",
     ],
 )
 
