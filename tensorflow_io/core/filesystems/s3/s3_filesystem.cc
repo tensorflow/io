@@ -1185,9 +1185,9 @@ int GetChildren(const TF_Filesystem* filesystem, const char* path,
     list_objects_result = list_objects_outcome.GetResult();
     for (const auto& object : list_objects_result.GetCommonPrefixes()) {
       Aws::String s = object.GetPrefix();
-      s.erase(s.length() - 1);
       Aws::String entry = s.substr(prefix.length());
       if (entry.length() > 0) {
+        entry.erase(entry.length() - 1);
         result.push_back(entry);
       }
     }
