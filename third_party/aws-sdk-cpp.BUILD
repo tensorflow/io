@@ -16,7 +16,6 @@ cc_library(
         "aws-cpp-sdk-core/source/auth/*.cpp",  # AWS_AUTH_SOURCE
         "aws-cpp-sdk-core/source/client/*.cpp",  # AWS_CLIENT_SOURCE
         "aws-cpp-sdk-core/source/internal/*.cpp",  # AWS_INTERNAL_SOURCE
-        "aws-cpp-sdk-core/source/aws/model/*.cpp",  # AWS_MODEL_SOURCE
         "aws-cpp-sdk-core/source/http/*.cpp",  # HTTP_SOURCE
         "aws-cpp-sdk-core/source/http/standard/*.cpp",  # HTTP_STANDARD_SOURCE
         "aws-cpp-sdk-core/source/config/*.cpp",  # CONFIG_SOURCE
