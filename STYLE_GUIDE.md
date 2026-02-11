@@ -53,7 +53,7 @@ For example, the python equivalent declaration of above mentioned C++ op named `
 from tensorflow_io.python.ops import core_ops
 
 def resample(input, rate_in, rate_out, name=None):
-  """resample audio"""
+  """resample audio """
 
   # implementation logic#
 
