@@ -38,7 +38,7 @@ limitations under the License.
 #include "arrow/buffer.h"
 #include "arrow/io/memory.h"
 #include "arrow/ipc/api.h"
-#include "google/cloud/bigquery/storage/v1beta1/storage.grpc.pb.h"
+#include "google/cloud/bigquery/storage/v1/storage.grpc.pb.h"
 #include "tensorflow/core/framework/dataset.h"
 #include "tensorflow/core/framework/resource_mgr.h"
 #include "tensorflow/core/framework/tensor.h"
@@ -50,18 +50,18 @@ limitations under the License.
 
 namespace tensorflow {
 
-namespace apiv1beta1 = ::google::cloud::bigquery::storage::v1beta1;
+namespace apiv1 = ::google::cloud::bigquery::storage::v1;
 static constexpr int kMaxReceiveMessageSize = -1;  // Disabled
 
 Status GrpcStatusToTfStatus(const ::grpc::Status &status);
 string GrpcStatusToString(const ::grpc::Status &status);
 Status GetDataFormat(string data_format_str,
-                     apiv1beta1::DataFormat *data_format);
+                     apiv1::DataFormat *data_format);
 
 class BigQueryClientResource : public ResourceBase {
  public:
   explicit BigQueryClientResource(
-      std::function<std::unique_ptr<apiv1beta1::BigQueryStorage::Stub>(
+      std::function<std::unique_ptr<apiv1::BigQueryRead::Stub>(
           const string &read_stream)>
           stub_factory)
       : stub_factory_(stub_factory) {}
@@ -80,10 +80,10 @@ class BigQueryClientResource : public ResourceBase {
           args.SetString("read_stream", read_stream);
           auto channel = ::grpc::CreateCustomChannel(server_name, creds, args);
           VLOG(3) << "Creating GRPC channel";
-          return absl::make_unique<apiv1beta1::BigQueryStorage::Stub>(channel);
+          return absl::make_unique<apiv1::BigQueryRead::Stub>(channel);
         }) {}
 
-  apiv1beta1::BigQueryStorage::Stub *GetStub(const string &read_stream)
+  apiv1::BigQueryRead::Stub *GetStub(const string &read_stream)
       TF_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (stubs_.find(read_stream) == stubs_.end()) {
       auto stub = stub_factory_(read_stream);
@@ -95,11 +95,11 @@ class BigQueryClientResource : public ResourceBase {
   string DebugString() const override { return "BigQueryClientResource"; }
 
  private:
-  std::function<std::unique_ptr<apiv1beta1::BigQueryStorage::Stub>(
+  std::function<std::unique_ptr<apiv1::BigQueryRead::Stub>(
       const string &)>
       stub_factory_;
   mutex mu_;
-  std::unordered_map<string, std::unique_ptr<apiv1beta1::BigQueryStorage::Stub>>
+  std::unordered_map<string, std::unique_ptr<apiv1::BigQueryRead::Stub>>
       stubs_ TF_GUARDED_BY(mu_);
 };
 
@@ -156,11 +156,9 @@ class BigQueryReaderDatasetIteratorBase : public DatasetIterator<Dataset> {
       return OkStatus();
     }
 
-    apiv1beta1::ReadRowsRequest readRowsRequest;
-    readRowsRequest.mutable_read_position()->mutable_stream()->set_name(
-        this->dataset()->stream());
-    readRowsRequest.mutable_read_position()->set_offset(
-        this->dataset()->offset());
+    apiv1::ReadRowsRequest readRowsRequest;
+    readRowsRequest.set_read_stream(this->dataset()->stream());
+    readRowsRequest.set_offset(this->dataset()->offset());
 
     read_rows_context_ = absl::make_unique<::grpc::ClientContext>();
     // The deadline is for the entire ReadRows (not a single message receipt),
@@ -169,14 +167,14 @@ class BigQueryReaderDatasetIteratorBase : public DatasetIterator<Dataset> {
                                      std::chrono::hours(24));
     read_rows_context_->AddMetadata(
         "x-goog-request-params",
-        absl::StrCat("read_position.stream.name=",
-                     readRowsRequest.read_position().stream().name()));
+        absl::StrCat("read_stream=",
+                     readRowsRequest.read_stream()));
 
     VLOG(3) << "getting reader, stream: "
-            << readRowsRequest.read_position().stream().DebugString();
+            << readRowsRequest.read_stream();
     reader_ = this->dataset()
                   ->client_resource()
-                  ->GetStub(readRowsRequest.read_position().stream().name())
+                  ->GetStub(readRowsRequest.read_stream())
                   ->ReadRows(read_rows_context_.get(), readRowsRequest);
 
     return OkStatus();
@@ -191,9 +189,9 @@ class BigQueryReaderDatasetIteratorBase : public DatasetIterator<Dataset> {
   int current_row_index_ = 0;
   mutex mu_;
   std::unique_ptr<::grpc::ClientContext> read_rows_context_ TF_GUARDED_BY(mu_);
-  std::unique_ptr<::grpc::ClientReader<apiv1beta1::ReadRowsResponse>> reader_
+  std::unique_ptr<::grpc::ClientReader<apiv1::ReadRowsResponse>> reader_
       TF_GUARDED_BY(mu_);
-  std::unique_ptr<apiv1beta1::ReadRowsResponse> response_ TF_GUARDED_BY(mu_);
+  std::unique_ptr<apiv1::ReadRowsResponse> response_ TF_GUARDED_BY(mu_);
 };
 
 // BigQuery reader for Arrow serialized data.
@@ -213,11 +211,11 @@ class BigQueryReaderArrowDatasetIterator
       TF_EXCLUSIVE_LOCKS_REQUIRED(this->mu_) override {
     if (this->response_ && this->response_->has_arrow_record_batch() &&
         this->current_row_index_ <
-            this->response_->arrow_record_batch().row_count()) {
+            this->response_->row_count()) {
       return OkStatus();
     }
 
-    this->response_ = absl::make_unique<apiv1beta1::ReadRowsResponse>();
+    this->response_ = absl::make_unique<apiv1::ReadRowsResponse>();
     if (!this->reader_->Read(this->response_.get())) {
       *end_of_sequence = true;
       return GrpcStatusToTfStatus(this->reader_->Finish());
@@ -315,11 +313,11 @@ class BigQueryReaderAvroDatasetIterator
   Status EnsureHasRow(bool *end_of_sequence)
       TF_EXCLUSIVE_LOCKS_REQUIRED(this->mu_) override {
     if (this->response_ &&
-        this->current_row_index_ < this->response_->avro_rows().row_count()) {
+        this->current_row_index_ < this->response_->row_count()) {
       return OkStatus();
     }
 
-    this->response_ = absl::make_unique<apiv1beta1::ReadRowsResponse>();
+    this->response_ = absl::make_unique<apiv1::ReadRowsResponse>();
     VLOG(3) << "calling read";
     if (!this->reader_->Read(this->response_.get())) {
       VLOG(3) << "no data";

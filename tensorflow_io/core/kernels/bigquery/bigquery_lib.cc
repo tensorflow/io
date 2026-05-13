@@ -78,11 +78,11 @@ string GrpcStatusToString(const ::grpc::Status& status) {
 }
 
 Status GetDataFormat(string data_format_str,
-                     apiv1beta1::DataFormat* data_format) {
+                     apiv1::DataFormat* data_format) {
   if (data_format_str == "ARROW") {
-    *data_format = apiv1beta1::DataFormat::ARROW;
+    *data_format = apiv1::DataFormat::ARROW;
   } else if (data_format_str == "AVRO") {
-    *data_format = apiv1beta1::DataFormat::AVRO;
+    *data_format = apiv1::DataFormat::AVRO;
   } else {
     return errors::Internal("Unsupported data format: " + data_format_str);
   }

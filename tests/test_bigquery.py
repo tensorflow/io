@@ -34,8 +34,15 @@ from tensorflow_io.bigquery import (
     BigQueryClient,
 )  # pylint: disable=wrong-import-order
 
-import google.cloud.bigquery_storage_v1beta1.proto.storage_pb2_grpc as storage_pb2_grpc  # pylint: disable=wrong-import-order
-import google.cloud.bigquery_storage_v1beta1.proto.storage_pb2 as storage_pb2  # pylint: disable=wrong-import-order
+import google.cloud.bigquery_storage_v1 as bigquery_storage  # pylint: disable=wrong-import-order
+from google.cloud.bigquery_storage_v1 import types as storage_pb2  # pylint: disable=wrong-import-order
+from google.cloud.bigquery_storage_v1.services.big_query_read import (
+    BigQueryReadServicer,
+    BigQueryReadStub,
+)  # pylint: disable=wrong-import-order
+import google.cloud.bigquery_storage_v1.services.big_query_read.transports.grpc as bigquery_storage_grpc  # pylint: disable=wrong-import-order
+
+storage_pb2_grpc = bigquery_storage_grpc.BigQueryReadGrpcTransport
 
 if sys.platform == "darwin":
     pytest.skip("TODO: macOS is failing", allow_module_level=True)
@@ -44,7 +51,7 @@ if not (hasattr(tf, "version") and tf.version.VERSION.startswith("2.")):
     tf.compat.v1.enable_eager_execution()
 
 
-class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
+class FakeBigQueryServer(BigQueryReadServicer):
     """Fake server for Cloud BigQuery Storage API."""
 
     def __init__(
@@ -62,7 +69,9 @@ class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
         self._grpc_server = grpc.server(
             concurrent.futures.ThreadPoolExecutor(max_workers=4)
         )
-        storage_pb2_grpc.add_BigQueryStorageServicer_to_server(self, self._grpc_server)
+        bigquery_storage_grpc.BigQueryReadGrpcTransport.add_server(
+            self._grpc_server, self
+        )
         port = self._grpc_server.add_insecure_port("localhost:0")
         self._endpoint = "localhost:" + str(port)
         print("started a fake server on :" + self._endpoint)
@@ -101,31 +110,33 @@ class FakeBigQueryServer(storage_pb2_grpc.BigQueryStorageServicer):
     def CreateReadSession(self, request, context):  # pylint: disable=unused-argument
         """CreateReadSession"""
         print("called CreateReadSession on a fake server")
-        self._project_id = request.table_reference.project_id
-        self._table_id = request.table_reference.table_id
-        self._dataset_id = request.table_reference.dataset_id
+        table_path = request.read_session.table
+        parts = table_path.split("/")
+        self._project_id = parts[1]
+        self._dataset_id = parts[3]
+        self._table_id = parts[5]
         self._streams = []
         response = storage_pb2.ReadSession()
         response.avro_schema.schema = self._avro_schema
-        for i in range(request.requested_streams):
+        for i in range(request.max_stream_count):
             stream_name = self._build_stream_name(i)
             self._streams.append(stream_name)
-            stream = response.streams.add()
-            stream.name = stream_name
+            stream = storage_pb2.ReadStream(name=stream_name)
+            response.streams.append(stream)
         return response
 
     def ReadRows(self, request, context):  # pylint: disable=unused-argument
         """ReadRows"""
         print("called ReadRows on a fake server: %s" % str(request))
         response = storage_pb2.ReadRowsResponse()
-        stream_index = self._streams.index(request.read_position.stream.name)
+        stream_index = self._streams.index(request.read_stream)
         if 0 <= stream_index < len(self._rows_per_stream):
-            rows = self._rows_per_stream[stream_index][request.read_position.offset :]
+            rows = self._rows_per_stream[stream_index][request.offset :]
             serialized_rows = FakeBigQueryServer.serialize_to_avro(
                 rows, self._avro_schema
             )
             response.avro_rows.serialized_binary_rows = serialized_rows
-            response.avro_rows.row_count = len(rows)
+            response.row_count = len(rows)
         yield response
 
 
@@ -459,24 +470,23 @@ class BigqueryOpsTest(test.TestCase):
     def test_fake_server(self):
         """Fake server test."""
         channel = grpc.insecure_channel(BigqueryOpsTest.server.endpoint())
-        stub = storage_pb2_grpc.BigQueryStorageStub(channel)
+        stub = BigQueryReadStub(channel)
 
         create_read_session_request = storage_pb2.CreateReadSessionRequest()
-        create_read_session_request.table_reference.project_id = self.GCP_PROJECT_ID
-        create_read_session_request.table_reference.dataset_id = self.DATASET_ID
-        create_read_session_request.table_reference.table_id = self.TABLE_ID
-        create_read_session_request.requested_streams = 2
+        create_read_session_request.read_session.table = (
+            "projects/%s/datasets/%s/tables/%s"
+            % (self.GCP_PROJECT_ID, self.DATASET_ID, self.TABLE_ID)
+        )
+        create_read_session_request.max_stream_count = 2
 
         read_session_response = stub.CreateReadSession(create_read_session_request)
         self.assertEqual(2, len(read_session_response.streams))
 
         read_rows_request = storage_pb2.ReadRowsRequest()
-        read_rows_request.read_position.stream.name = read_session_response.streams[
-            0
-        ].name
+        read_rows_request.read_stream = read_session_response.streams[0].name
         read_rows_response = stub.ReadRows(read_rows_request)
 
-        row = read_rows_response.next()
+        row = next(read_rows_response)
         self.assertEqual(
             FakeBigQueryServer.serialize_to_avro(self.STREAM_1_ROWS, self.AVRO_SCHEMA),
             row.avro_rows.serialized_binary_rows,
@@ -484,11 +494,9 @@ class BigqueryOpsTest(test.TestCase):
         self.assertEqual(len(self.STREAM_1_ROWS), row.avro_rows.row_count)
 
         read_rows_request = storage_pb2.ReadRowsRequest()
-        read_rows_request.read_position.stream.name = read_session_response.streams[
-            1
-        ].name
+        read_rows_request.read_stream = read_session_response.streams[1].name
         read_rows_response = stub.ReadRows(read_rows_request)
-        row = read_rows_response.next()
+        row = next(read_rows_response)
         self.assertEqual(
             FakeBigQueryServer.serialize_to_avro(self.STREAM_2_ROWS, self.AVRO_SCHEMA),
             row.avro_rows.serialized_binary_rows,
