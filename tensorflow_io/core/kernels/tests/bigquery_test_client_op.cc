@@ -18,7 +18,7 @@ limitations under the License.
 namespace tensorflow {
 namespace {
 
-namespace apiv1beta1 = ::google::cloud::bigquery::storage::v1beta1;
+namespace apiv1 = ::google::cloud::bigquery::storage::v1;
 
 class BigQueryTestClientOp : public OpKernel {
  public:
@@ -58,13 +58,13 @@ class BigQueryTestClientOp : public OpKernel {
                   std::shared_ptr<grpc::Channel> channel =
                       ::grpc::CreateChannel(this->fake_server_address_,
                                             grpc::InsecureChannelCredentials());
-                  auto stub = apiv1beta1::BigQueryStorage::NewStub(channel);
+                  auto stub = apiv1::BigQueryRead::NewStub(channel);
                   LOG(INFO) << "BigQueryTestClientOp waiting for connections";
                   channel->WaitForConnected(
                       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                    gpr_time_from_seconds(15, GPR_TIMESPAN)));
                   LOG(INFO) << "Done creating BigQueryTestClientOp Fake client";
-                  return absl::make_unique<apiv1beta1::BigQueryStorage::Stub>(
+                  return absl::make_unique<apiv1::BigQueryRead::Stub>(
                       channel);
                 });
                 return OkStatus();

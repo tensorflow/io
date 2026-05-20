@@ -19,7 +19,7 @@ limitations under the License.
 namespace tensorflow {
 namespace {
 
-namespace apiv1beta1 = ::google::cloud::bigquery::storage::v1beta1;
+namespace apiv1 = ::google::cloud::bigquery::storage::v1;
 
 class BigQueryClientOp : public OpKernel {
  public:
@@ -105,35 +105,30 @@ class BigQueryReadSessionOp : public OpKernel {
         ctx, LookupResource(ctx, HandleFromInput(ctx, 0), &client_resource));
     core::ScopedUnref scoped_unref(client_resource);
 
-    apiv1beta1::CreateReadSessionRequest createReadSessionRequest;
-    createReadSessionRequest.mutable_table_reference()->set_project_id(
-        project_id_);
-    createReadSessionRequest.mutable_table_reference()->set_dataset_id(
-        dataset_id_);
-    createReadSessionRequest.mutable_table_reference()->set_table_id(table_id_);
+    apiv1::CreateReadSessionRequest createReadSessionRequest;
     createReadSessionRequest.set_parent(parent_);
-    *createReadSessionRequest.mutable_read_options()
-         ->mutable_selected_fields() = {selected_fields_.begin(),
-                                        selected_fields_.end()};
-    createReadSessionRequest.mutable_read_options()->set_row_restriction(
-        row_restriction_);
-    createReadSessionRequest.set_requested_streams(requested_streams_);
-    createReadSessionRequest.set_sharding_strategy(
-        apiv1beta1::ShardingStrategy::BALANCED);
-    createReadSessionRequest.set_format(data_format_);
+    apiv1::ReadSession* read_session =
+        createReadSessionRequest.mutable_read_session();
+    read_session->set_table(strings::Printf(
+        "projects/%s/datasets/%s/tables/%s", project_id_.c_str(),
+        dataset_id_.c_str(), table_id_.c_str()));
+    read_session->set_data_format(data_format_);
+    *read_session->mutable_read_options()->mutable_selected_fields() = {
+        selected_fields_.begin(), selected_fields_.end()};
+    read_session->mutable_read_options()->set_row_restriction(row_restriction_);
+    createReadSessionRequest.set_max_stream_count(requested_streams_);
+
     VLOG(3) << "createReadSessionRequest: "
             << createReadSessionRequest.DebugString();
     ::grpc::ClientContext context;
-    context.AddMetadata(
-        "x-goog-request-params",
-        strings::Printf("table_reference.dataset_id=%s&table_"
-                        "reference.project_id=%s",
-                        dataset_id_.c_str(), project_id_.c_str()));
+    context.AddMetadata("x-goog-request-params",
+                        strings::Printf("read_session.table=%s",
+                                        read_session->table().c_str()));
     context.set_deadline(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                       gpr_time_from_seconds(60, GPR_TIMESPAN)));
 
-    std::shared_ptr<apiv1beta1::ReadSession> readSessionResponse =
-        std::make_shared<apiv1beta1::ReadSession>();
+    std::shared_ptr<apiv1::ReadSession> readSessionResponse =
+        std::make_shared<apiv1::ReadSession>();
     VLOG(3) << "calling readSession";
     ::grpc::Status status = client_resource->GetStub("")->CreateReadSession(
         &context, createReadSessionRequest, readSessionResponse.get());
@@ -155,13 +150,13 @@ class BigQueryReadSessionOp : public OpKernel {
     Tensor* schema_t = nullptr;
     OP_REQUIRES_OK(ctx, ctx->allocate_output("schema", {}, &schema_t));
 
-    if (data_format_ == apiv1beta1::DataFormat::AVRO) {
+    if (data_format_ == apiv1::DataFormat::AVRO) {
       OP_REQUIRES(ctx, readSessionResponse->has_avro_schema(),
                   errors::InvalidArgument("AVRO schema is missing"));
       VLOG(3) << "avro schema:" << readSessionResponse->avro_schema().schema();
       schema_t->scalar<tstring>()() =
           readSessionResponse->avro_schema().schema();
-    } else if (data_format_ == apiv1beta1::DataFormat::ARROW) {
+    } else if (data_format_ == apiv1::DataFormat::ARROW) {
       OP_REQUIRES(ctx, readSessionResponse->has_arrow_schema(),
                   errors::InvalidArgument("ARROW schema is missing"));
       VLOG(3) << "arrow schema:"
@@ -183,7 +178,7 @@ class BigQueryReadSessionOp : public OpKernel {
   std::vector<DataType> output_types_;
   string row_restriction_;
   int requested_streams_;
-  apiv1beta1::DataFormat data_format_;
+  apiv1::DataFormat data_format_;
 
   mutex mu_;
   ContainerInfo cinfo_ TF_GUARDED_BY(mu_);

@@ -108,7 +108,7 @@ class BigQueryDatasetOp : public DatasetOpKernel {
   std::vector<string> default_values_;
   std::vector<absl::any> typed_default_values_;
   int64 offset_;
-  apiv1beta1::DataFormat data_format_;
+  apiv1::DataFormat data_format_;
 
   class Dataset : public DatasetBase {
    public:
@@ -120,7 +120,7 @@ class BigQueryDatasetOp : public DatasetOpKernel {
                      std::vector<string> selected_fields,
                      std::vector<DataType> output_types,
                      std::vector<absl::any> typed_default_values, int64 offset_,
-                     apiv1beta1::DataFormat data_format)
+                     apiv1::DataFormat data_format)
         : DatasetBase(DatasetContext(ctx)),
           client_resource_(client_resource),
           output_types_vector_(output_types_vector),
@@ -134,10 +134,10 @@ class BigQueryDatasetOp : public DatasetOpKernel {
           data_format_(data_format) {
       client_resource_->Ref();
 
-      if (data_format == apiv1beta1::DataFormat::AVRO) {
+      if (data_format == apiv1::DataFormat::AVRO) {
         std::istringstream istream(schema);
         avro::compileJsonSchema(istream, *avro_schema_);
-      } else if (data_format == apiv1beta1::DataFormat::ARROW) {
+      } else if (data_format == apiv1::DataFormat::ARROW) {
         auto buffer_ = std::make_shared<arrow::Buffer>(
             reinterpret_cast<const uint8_t *>(&schema[0]), schema.length());
 
@@ -158,11 +158,11 @@ class BigQueryDatasetOp : public DatasetOpKernel {
 
     std::unique_ptr<IteratorBase> MakeIteratorInternal(
         const string &prefix) const override {
-      if (data_format_ == apiv1beta1::DataFormat::AVRO) {
+      if (data_format_ == apiv1::DataFormat::AVRO) {
         return std::unique_ptr<IteratorBase>(
             new BigQueryReaderAvroDatasetIterator<Dataset>(
                 {this, strings::StrCat(prefix, "::BigQueryAvroDataset")}));
-      } else if (data_format_ == apiv1beta1::DataFormat::ARROW) {
+      } else if (data_format_ == apiv1::DataFormat::ARROW) {
         return std::unique_ptr<IteratorBase>(
             new BigQueryReaderArrowDatasetIterator<Dataset>(
                 {this, strings::StrCat(prefix, "::BigQueryArrowDataset")}));
@@ -229,7 +229,7 @@ class BigQueryDatasetOp : public DatasetOpKernel {
     const std::unique_ptr<avro::ValidSchema> avro_schema_;
     const int64 offset_;
     std::shared_ptr<::arrow::Schema> arrow_schema_;
-    const apiv1beta1::DataFormat data_format_;
+    const apiv1::DataFormat data_format_;
   };
 };
 
