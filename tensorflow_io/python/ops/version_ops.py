@@ -15,4 +15,4 @@
 """version_ops"""
 
 version = "0.37.1"
-require = "tensorflow>=2.16.0,<2.17.0"
+require = "tensorflow>=2.19.0,<2.20.0"
