@@ -1,3 +1,17 @@
+# Release 0.37.2
+
+## Major Features and Bug Fixes
+* Update BigQuery Storage from to v1
+
+## Thanks to our Contributors
+
+This release contains contributions from many people:
+
+Ben Hu
+
+We are also grateful to all who filed issues or helped resolve them, asked and
+answered questions, and were part of inspiring discussions.
+
 # Release 0.37.1
 
 ## Major Features and Bug Fixes
