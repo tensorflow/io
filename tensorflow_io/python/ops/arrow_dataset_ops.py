@@ -651,6 +651,39 @@ class ArrowStreamDataset(ArrowBaseDataset):
         )
 
 
+class ArrowParquetDataset(ArrowBaseDataset):
+    """An Arrow Dataset for reading record batches from parquet files.
+    """
+
+    def __init__(
+            self,
+            file_paths,
+            column_names,
+            columns,
+            output_types,
+            output_shapes=None,
+            batch_size=None,
+            batch_mode="keep_remainder",
+    ):
+        file_paths = tf.convert_to_tensor(
+            file_paths, dtype=dtypes.string, name="file_paths"
+        )
+        column_names = tf.convert_to_tensor(
+            column_names, dtype=dtypes.string, name="column_names"
+        )
+        super().__init__(
+            partial(
+                core_ops.io_arrow_parquet_dataset,
+                file_paths,
+                column_names,
+            ),
+            columns,
+            output_types,
+            output_shapes,
+            batch_size,
+            batch_mode,
+        )
+
 def list_feather_columns(filename, **kwargs):
     """list_feather_columns"""
     if not tf.executing_eagerly():

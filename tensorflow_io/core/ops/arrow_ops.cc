@@ -38,6 +38,21 @@ in file format.
 buffer_size: Buffer size in bytes
 )doc");
 
+REGISTER_OP("IO>ArrowParquetDataset")
+    .Input("file_paths: string")
+    .Input("column_names: string")
+    .Input("columns: int32")
+    .Input("batch_size: int64")
+    .Input("batch_mode: string")
+    .Output("handle: variant")
+    .Attr("output_types: list(type) >= 1")
+    .Attr("output_shapes: list(shape) >= 1")
+    .SetIsStateful()
+    .SetShapeFn(shape_inference::ScalarShape)
+    .Doc(R"doc(
+Creates a dataset from parquet files.
+)doc");
+
 REGISTER_OP("IO>ArrowSerializedDataset")
     .Input("serialized_batches: string")
     .Input("columns: int32")
@@ -92,7 +107,7 @@ REGISTER_OP("IO>ListFeatherColumns")
     .Output("columns: string")
     .Output("dtypes: string")
     .Output("shapes: int64")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
+    .SetShapeFn([](shape_inference::InferenceContext *c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({c->UnknownDim()}));
       c->set_output(2, c->MakeShape({c->UnknownDim(), c->UnknownDim()}));
@@ -105,7 +120,7 @@ REGISTER_OP("IO>FeatherReadableInit")
     .Output("components: string")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
+    .SetShapeFn([](shape_inference::InferenceContext *c) {
       c->set_output(0, c->Scalar());
       c->set_output(1, c->MakeShape({}));
       return OkStatus();
@@ -116,7 +131,7 @@ REGISTER_OP("IO>FeatherReadableSpec")
     .Output("shape: int64")
     .Output("dtype: int64")
     .Attr("component: string")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
+    .SetShapeFn([](shape_inference::InferenceContext *c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({}));
       return OkStatus();
@@ -130,7 +145,7 @@ REGISTER_OP("IO>FeatherReadableRead")
     .Attr("component: string")
     .Attr("shape: shape")
     .Attr("dtype: type")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
+    .SetShapeFn([](shape_inference::InferenceContext *c) {
       PartialTensorShape shape;
       TF_RETURN_IF_ERROR(c->GetAttr("shape", &shape));
       shape_inference::ShapeHandle entry;
@@ -148,7 +163,7 @@ REGISTER_OP("IO>ArrowReadableFromMemoryInit")
     .Output("resource: resource")
     .Attr("container: string = ''")
     .Attr("shared_name: string = ''")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
+    .SetShapeFn([](shape_inference::InferenceContext *c) {
       c->set_output(0, c->Scalar());
       return OkStatus();
     });
@@ -159,7 +174,7 @@ REGISTER_OP("IO>ArrowReadableSpec")
     .Input("column_name: string")
     .Output("shape: int64")
     .Output("dtype: int64")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
+    .SetShapeFn([](shape_inference::InferenceContext *c) {
       c->set_output(0, c->MakeShape({c->UnknownDim()}));
       c->set_output(1, c->MakeShape({}));
       return OkStatus();
@@ -174,7 +189,7 @@ REGISTER_OP("IO>ArrowReadableRead")
     .Input("stop: int64")
     .Output("value: dtype")
     .Attr("dtype: type")
-    .SetShapeFn([](shape_inference::InferenceContext* c) {
+    .SetShapeFn([](shape_inference::InferenceContext *c) {
       shape_inference::ShapeHandle full;
       TF_RETURN_IF_ERROR(c->MakeShapeFromShapeTensor(3, &full));
       if (!(c->RankKnown(full) && c->Rank(full) > 0)) {
