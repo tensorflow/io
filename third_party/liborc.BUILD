@@ -39,6 +39,7 @@ cc_library(
     ],
     copts = [],
     defines = [],
+    local_defines = ["BUILD_LIBHDFSPP"],
     includes = [
         "c++/include",
         "c++/src",
@@ -49,32 +50,14 @@ cc_library(
     linkopts = [],
     visibility = ["//visibility:public"],
     deps = [
-        ":libhdfspp",
         ":orc_cc_proto",
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
         "@lz4",
         "@snappy",
         "@zlib",
         "@zstd",
     ],
-)
-
-cc_library(
-    name = "libhdfspp",
-    srcs = glob(
-        [
-            "c++/libs/libhdfspp/include/hdfspp/*.h",
-        ],
-        exclude = [
-        ],
-    ),
-    hdrs = [
-    ],
-    copts = [],
-    defines = [],
-    includes = [
-        "c++/libs/libhdfspp/include",
-    ],
-    deps = [],
 )
 
 proto_library(
