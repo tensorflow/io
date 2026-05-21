@@ -26,11 +26,8 @@ genrule(
     name = "pyupgrade",
     srcs = [],
     outs = ["pyupgrade"],
-    cmd = "echo '$(location :pyupgrade_py) \"$$@\"' > $@",
+    cmd = "echo 'pyupgrade \"$$@\"' > $@",
     executable = True,
-    tools = [
-        ":pyupgrade_py",
-    ],
 )
 
 py_binary(
@@ -45,11 +42,8 @@ genrule(
     name = "black",
     srcs = [],
     outs = ["black"],
-    cmd = "echo '$(location :black_py) \"$$@\"' > $@",
+    cmd = "echo 'black \"$$@\"' > $@",
     executable = True,
-    tools = [
-        ":black_py",
-    ],
 )
 
 genrule(

@@ -71,9 +71,7 @@ http_archive(
     name = "com_google_googleapis",
     build_file = "@com_github_googleapis_google_cloud_cpp//bazel:googleapis.BUILD",
     patch_cmds = [
-        """sed -i.bak 's/OPTIONAL/OPIONAL/g' google/api/field_behavior.proto""",
-        """sed -i.bak 's/OPTIONAL/OPIONAL/g' google/pubsub/v1beta2/pubsub.proto""",
-        """sed -i.bak 's/OPTIONAL/OPIONAL/g' google/pubsub/v1/pubsub.proto""",
+        """find google/ -name "*.proto" -exec sed -i.bak 's/\\bOPTIONAL\\b/OPIONAL/g' {} +""",
     ],
     sha256 = "249d83abc5d50bf372c35c49d77f900bff022b2c21eb73aa8da1458b6ac401fc",
     strip_prefix = "googleapis-6b3fdcea8bc5398be4e7e9930c693f0ea09316a0",
