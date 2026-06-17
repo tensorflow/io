@@ -19,6 +19,29 @@ Integrations with many systems and cloud vendors include (but not limited to):
 - Microsoft Azure Storage
 - Alibaba Cloud OSS etc.
 
+## S3 and S3-compatible object storage
+
+The `s3://` file system, registered on `import tensorflow_io`, supports Amazon S3
+and S3-compatible object stores such as Backblaze B2, Cloudflare R2, and MinIO. It
+reads the standard AWS credential and region variables (`AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY`, `AWS_REGION`); for a non-AWS provider, set `S3_ENDPOINT`
+to the provider endpoint. The same `s3://` paths are used for reading and writing
+through `tf.data`, `tf.io.gfile`, `tf.train.Checkpoint`, and `tf.saved_model`.
+
+```python
+import tensorflow as tf
+import tensorflow_io as tfio  # registers the s3:// file system
+
+dataset = tf.data.TFRecordDataset("s3://my-bucket/train/shard-00000.tfrecord")
+```
+
+```bash
+export AWS_ACCESS_KEY_ID=<access_key_id>
+export AWS_SECRET_ACCESS_KEY=<secret_access_key>
+export AWS_REGION=us-west-004
+export S3_ENDPOINT=https://s3.us-west-004.backblazeb2.com
+```
+
 ## Community
 
 * SIG IO [Google Group](https://groups.google.com/a/tensorflow.org/forum/#!forum/io) and mailing list: [io@tensorflow.org](io@tensorflow.org)
