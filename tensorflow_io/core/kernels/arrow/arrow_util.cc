@@ -420,7 +420,11 @@ class ArrowMakeArrayDataImpl : public arrow::TypeVisitor {
 
     // Make array data for the child type
     type_ = type.value_type();
-    type.value_type()->Accept(this);
+    arrow::Status child_status = type.value_type()->Accept(this);
+    if (!child_status.ok()) {
+      return arrow::Status::NotImplemented(
+          "Unsupported list child type " + type.value_type()->ToString());
+    }
     auto child_data = *out_data_;
 
     // Make array data for the list TODO null count == 0
