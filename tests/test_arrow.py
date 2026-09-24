@@ -189,6 +189,14 @@ class ArrowIOTensorTest(ArrowTestBase):
         iot = tfio.IOTensor.from_arrow(table)
         self.run_test_case(iot, truth_data, table.column_names)
 
+    def test_arrow_io_tensor_list_string(self):
+        """A list of strings is not buildable yet and must fail cleanly"""
+        table = pa.Table.from_arrays(
+            [pa.array([["a", "b"], ["c"]], type=pa.list_(pa.string()))], names=["a"]
+        )
+        with self.assertRaisesRegex(tf.errors.OpError, "Unsupported list child type"):
+            tfio.IOTensor.from_arrow(table)
+
     def test_arrow_io_tensor_mixed(self):
         """test_arrow_io_tensor_mixed"""
         truth_data = TruthData(
